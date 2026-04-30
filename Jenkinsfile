@@ -48,20 +48,19 @@ pipeline {
             }
         }
 
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh '''
-                        sonar-scanner \
-                          -Dsonar.projectKey=${SONAR_PROJECT} \
-                          -Dsonar.sources=app \
-                          -Dsonar.tests=app/test \
-                          -Dsonar.javascript.lcov.reportPaths=app/coverage/lcov.info \
-                          -Dsonar.exclusions=**/node_modules/**
-                    '''
-                }
-            }
+stage('SonarQube Analysis') {
+    steps {
+        withSonarQubeEnv('SonarQube') {
+            sh '''/opt/sonar-scanner/bin/sonar-scanner \
+              -Dsonar.projectKey=${SONAR_PROJECT} \
+              -Dsonar.sources=app \
+              -Dsonar.tests=app/test \
+              -Dsonar.javascript.lcov.reportPaths=app/coverage/lcov.info \
+              -Dsonar.exclusions=**/node_modules/**
+            '''
         }
+    }
+}
 
         stage('Quality Gate') {
             steps {
