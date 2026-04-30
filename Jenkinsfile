@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         // ⚠️ Remplace par ton username Docker Hub
-        DOCKER_IMAGE    = "TON_USERNAME/devops-tp-app"
+        DOCKER_IMAGE    = "rayenchemlali/devops-tp-app"
         DOCKER_TAG      = "${BUILD_NUMBER}"
         SONAR_PROJECT   = "devops-tp"
     }
