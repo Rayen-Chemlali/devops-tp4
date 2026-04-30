@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: devops-tp-service
+  namespace: devops-tp
+  labels:
+    app: devops-tp
+spec:
+  selector:
+    app: devops-tp
+  ports:
+  - name: http
+    port: 80
+    targetPort: 3000
+    protocol: TCP
+  type: NodePort

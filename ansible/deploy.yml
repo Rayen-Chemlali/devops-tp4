@@ -1,0 +1,72 @@
+---
+- name: "Déploiement de l'application sur Kubernetes"
+  hosts: localhost
+  connection: local
+  gather_facts: false
+
+  vars:
+    docker_image: "{{ docker_image }}"
+    image_tag: "{{ image_tag }}"
+    namespace: "devops-tp"
+    app_name: "devops-tp-app"
+
+  tasks:
+
+    - name: "Vérifier la connexion au cluster Kubernetes"
+      command: kubectl cluster-info
+      register: cluster_info
+      changed_when: false
+
+    - name: "Afficher les infos du cluster"
+      debug:
+        msg: "{{ cluster_info.stdout_lines[0] }}"
+
+    - name: "Créer le namespace s'il n'existe pas"
+      command: kubectl create namespace {{ namespace }}
+      register: ns_result
+      failed_when: ns_result.rc != 0 and 'already exists' not in ns_result.stderr
+      changed_when: ns_result.rc == 0
+
+    - name: "Appliquer le Deployment avec l'image buildée"
+      shell: |
+        sed 's|IMAGE_PLACEHOLDER|{{ docker_image }}:{{ image_tag }}|g' \
+          {{ playbook_dir }}/../k8s/deployment.yaml | \
+        kubectl apply -f - -n {{ namespace }}
+      register: deploy_result
+
+    - name: "Afficher résultat du déploiement"
+      debug:
+        msg: "{{ deploy_result.stdout }}"
+
+    - name: "Appliquer le Service"
+      command: kubectl apply -f {{ playbook_dir }}/../k8s/service.yaml -n {{ namespace }}
+
+    - name: "Attendre que le Deployment soit prêt"
+      command: >
+        kubectl rollout status deployment/{{ app_name }}
+        -n {{ namespace }}
+        --timeout=120s
+      register: rollout_status
+
+    - name: "Afficher le statut du rollout"
+      debug:
+        msg: "{{ rollout_status.stdout }}"
+
+    - name: "Lister les pods déployés"
+      command: kubectl get pods -n {{ namespace }} -o wide
+      register: pods_list
+      changed_when: false
+
+    - name: "Afficher les pods"
+      debug:
+        msg: "{{ pods_list.stdout_lines }}"
+
+    - name: "Récupérer l'URL de l'application"
+      command: minikube service devops-tp-service -n {{ namespace }} --url
+      register: app_url
+      ignore_errors: true
+      changed_when: false
+
+    - name: "Afficher l'URL de l'application"
+      debug:
+        msg: "🚀 Application accessible à : {{ app_url.stdout | default('URL non disponible') }}"
